@@ -45,8 +45,9 @@ int main(int argc, char **argv) {
     for (int id = 1; id < proc_cnt + 1; ++id) {
         pid_t ret = fork();
         if (!ret) {
-            printf("In process %d\n", ret);
             Message msg;
+            int started = 0;
+            int done = 0;
 
             ContextPtr ctx = contextCreate(id, ipcCtx);
             ipcContextPrepare(ipcCtx, id);
@@ -56,61 +57,69 @@ int main(int argc, char **argv) {
             if (send_multicast(ctx, &msg) == 0)
                 loggerProcessStarted(eventsLogger, id, getpid(), getppid());
 
-            // Wait Started from all
-            int recv_started = 0;
-            // Without me
-            while (recv_started != proc_cnt - 1) {
-                if (receive_any(ctx, &msg) == 0 && msg.s_header.s_type == STARTED)
-                    recv_started++;
+            // Wait Started from all children
+            while (started != proc_cnt - 1) {
+                if (receive_any(ctx, &msg) == 0) {
+                    if (msg.s_header.s_type == STARTED)
+                        started++;
+                    if (msg.s_header.s_type == DONE)
+                        done++;
+                }
             }
             loggerProcessReceivedAllStarted(eventsLogger, id);
-
 
             // Multicast Done
             doneMessage(&msg, id);
             if (send_multicast(ctx, &msg) == 0)
                 loggerProcessDone(eventsLogger, id);
 
-            // Wait Done from all
-            int recv_done = 0;
-            // Without me
-            while (recv_done != proc_cnt - 1) {
-                if (receive_any(ctx, &msg) == 0 && msg.s_header.s_type == DONE)
-                    recv_done++;
+            // Wait Done from all children
+            while (done < proc_cnt - 1) {
+                if (receive_any(ctx, &msg) == 0) {
+                    if (msg.s_header.s_type == DONE)
+                        done++;
+                }
             }
             loggerProcessReceivedAllDone(eventsLogger, id);
 
+            contextDestroy(ctx);
             exit(1);
         }
     }
 
-    printf("In process!\n");
-
     Message msg;
+    int started = 0;
+    int done = 0;
 
     ContextPtr ctx = contextCreate(0, ipcCtx);
-    ipcContextPrepare(ipcCtx, 0);
+    // ipcContextPrepare(ipcCtx, 0);
 
     // Wait Started from all
     loggerProcessStarted(eventsLogger, ctx->id, getpid(), getppid());
-    int recv_started = 0;
-    while (recv_started != proc_cnt) {
-        if (receive_any(ctx, &msg) == 0 && msg.s_header.s_type == STARTED)
-            recv_started++;
+    while (started != proc_cnt) {
+        if (receive_any(ctx, &msg) == 0) {
+            if (msg.s_header.s_type == STARTED)
+                    started++;
+            if (msg.s_header.s_type == DONE)
+                    done++;
+        }
     }
     loggerProcessReceivedAllStarted(eventsLogger, ctx->id);
 
     // Wait Done from all
     loggerProcessDone(eventsLogger, ctx->id);
-    int recv_done = 0;
-    while (recv_done != proc_cnt) {
-        if (receive_any(ctx, &msg) == 0 && msg.s_header.s_type == DONE)
-            recv_done++;
+    while (done != proc_cnt) {
+        if (receive_any(ctx, &msg) == 0) {
+            if (msg.s_header.s_type == DONE)
+                done++;
+        }
     }
     loggerProcessReceivedAllDone(eventsLogger, ctx->id);
 
     for (int i = 0; i < proc_cnt; i++)
         wait(NULL);
     loggerDestroy(eventsLogger);
+    contextDestroy(ctx);
+    ipcContextDestroy(ipcCtx);
     return 0;
 }

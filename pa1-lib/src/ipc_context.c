@@ -14,8 +14,7 @@ IpcContextPtr ipcContextCreate(int proc_cnt) {
     for (int i = 0; i < proc_cnt; ++i) {
         context->channels[i] = malloc(proc_cnt * sizeof(struct Channel));
         for (int j = 0; j < proc_cnt; ++j) {
-            if (i != j)
-                channelCreate(&context->channels[i][j]);
+            channelCreate(&context->channels[i][j]);
         }
     }
     return context;
@@ -24,8 +23,7 @@ void ipcContextDestroy(IpcContextPtr instance) {
     loggerDestroy(instance->channelLogger);
     for (int i = 0; i < instance->proc_cnt; ++i) {
         for (int j = 0; j < instance->proc_cnt; ++j) {
-            if (i != j)
-                channelDestroy(&instance->channels[i][j]);
+            channelDestroy(&instance->channels[i][j]);
         }
         free(instance->channels[i]);
     }
@@ -37,7 +35,8 @@ void ipcContextPrepare(IpcContextPtr instance, local_id id) {
     for (int i = 0; i < instance->proc_cnt; ++i) {
         for (int j = 0; j < instance->proc_cnt; ++j) {
             if (i == j) {
-                continue;
+                channelCloseIO(&instance->channels[i][j]);
+                loggerChannelIOClosed(instance->channelLogger, id, &instance->channels[i][j]);
             }
             else if (id == i) {
                 channelCloseI(&instance->channels[i][j]);
