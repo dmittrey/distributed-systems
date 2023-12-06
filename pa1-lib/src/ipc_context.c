@@ -14,7 +14,8 @@ IpcContextPtr ipcContextCreate(int proc_cnt) {
     for (int i = 0; i < proc_cnt; ++i) {
         context->channels[i] = malloc(proc_cnt * sizeof(struct Channel));
         for (int j = 0; j < proc_cnt; ++j) {
-            channelCreate(&context->channels[i][j]);
+            if (i != j)
+                channelCreate(&context->channels[i][j]);
         }
     }
     return context;
@@ -23,7 +24,8 @@ void ipcContextDestroy(IpcContextPtr instance) {
     loggerDestroy(instance->channelLogger);
     for (int i = 0; i < instance->proc_cnt; ++i) {
         for (int j = 0; j < instance->proc_cnt; ++j) {
-            channelDestroy(&instance->channels[i][j]);
+            if (i != j)
+                channelDestroy(&instance->channels[i][j]);
         }
         free(instance->channels[i]);
     }
@@ -35,8 +37,7 @@ void ipcContextPrepare(IpcContextPtr instance, local_id id) {
     for (int i = 0; i < instance->proc_cnt; ++i) {
         for (int j = 0; j < instance->proc_cnt; ++j) {
             if (i == j) {
-                channelCloseIO(&instance->channels[i][j]);
-                loggerChannelIOClosed(instance->channelLogger, id, &instance->channels[i][j]);
+                continue;
             }
             else if (id == i) {
                 channelCloseI(&instance->channels[i][j]);
@@ -61,4 +62,19 @@ int ipcContextSend(const IpcContextPtr instance, local_id src, local_id dst, con
 }
 int ipcContextReceive(const IpcContextPtr instance, local_id src, local_id dst, Message *msg) {
     return channelRead(&instance->channels[src][dst], msg);
+}
+int ipcContextReceiveAll(const IpcContextPtr instance, local_id dst, local_id min_src, MessageType status) {
+    Message msg;
+    while (min_src < instance->proc_cnt) {
+        if (min_src == dst) {
+            min_src++;
+        } else {
+            int ret = ipcContextReceive(instance, min_src, dst, &msg);
+            if (ret > 0 && msg.s_header.s_type == (int16_t) status)
+                min_src++;
+            else if (ret == -1)
+                return -1;
+        }
+    }
+    return 0;
 }

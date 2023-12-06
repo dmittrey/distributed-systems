@@ -1,6 +1,10 @@
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "common.h"
 #include "context.h"
@@ -46,7 +50,6 @@ int main(int argc, char **argv) {
         pid_t ret = fork();
         if (!ret) {
             Message msg;
-            int current = 1;
 
             ContextPtr ctx = contextCreate(id, ipcCtx);
             ipcContextPrepare(ipcCtx, id);
@@ -57,13 +60,8 @@ int main(int argc, char **argv) {
                 loggerProcessStarted(eventsLogger, id, getpid(), getppid());
 
             // Wait Started from all children
-            while (current < proc_cnt) {
-                if (current == ctx->id)
-                    current++;
-                if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == STARTED)
-                    current++;
-            }
-            loggerProcessReceivedAllStarted(eventsLogger, id);
+            if (ipcContextReceiveAll(ipcCtx, id, 1, STARTED) == 0)
+                loggerProcessReceivedAllStarted(eventsLogger, id);
 
             // Multicast Done
             doneMessage(&msg, id);
@@ -71,42 +69,28 @@ int main(int argc, char **argv) {
                 loggerProcessDone(eventsLogger, id);
 
             // Wait Done from all children
-            current = 1;
-            while (current < proc_cnt) {
-                if (current == ctx->id)
-                    current++;
-                if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == DONE)
-                    current++;
-            }
-            loggerProcessReceivedAllDone(eventsLogger, id);
+            if (ipcContextReceiveAll(ipcCtx, id, 1, DONE) == 0)
+                loggerProcessReceivedAllDone(eventsLogger, id);
 
+            loggerDestroy(eventsLogger);
             contextDestroy(ctx);
-            exit(1);
+            ipcContextDestroy(ipcCtx);
+            exit(0);
         }
     }
 
-    Message msg;
-    int current = 1;
-
     ContextPtr ctx = contextCreate(0, ipcCtx);
-    // ipcContextPrepare(ipcCtx, 0);
+    ipcContextPrepare(ipcCtx, 0);
 
     // Wait Started from all
     loggerProcessStarted(eventsLogger, ctx->id, getpid(), getppid());
-    while (current < proc_cnt + 1) {
-        if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == STARTED)
-            current++;
-    }
-    loggerProcessReceivedAllStarted(eventsLogger, ctx->id);
+    if (ipcContextReceiveAll(ipcCtx, 0, 1, STARTED) == 0)
+        loggerProcessReceivedAllStarted(eventsLogger, 0);
 
     // Wait Done from all
     loggerProcessDone(eventsLogger, ctx->id);
-    current = 1;
-    while (current < proc_cnt + 1) {
-        if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == DONE)
-            current++;
-    }
-    loggerProcessReceivedAllDone(eventsLogger, ctx->id);
+    if (ipcContextReceiveAll(ipcCtx, 0, 1, DONE) == 0)
+        loggerProcessReceivedAllDone(eventsLogger, 0);
 
     for (int i = 0; i < proc_cnt; i++)
         wait(NULL);

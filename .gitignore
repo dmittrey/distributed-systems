@@ -1,3 +1,5 @@
 .vscode
 build
+pa1
 *.log
+*.tar.gz
