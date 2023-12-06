@@ -46,8 +46,7 @@ int main(int argc, char **argv) {
         pid_t ret = fork();
         if (!ret) {
             Message msg;
-            int started = 0;
-            int done = 0;
+            int current = 1;
 
             ContextPtr ctx = contextCreate(id, ipcCtx);
             ipcContextPrepare(ipcCtx, id);
@@ -58,13 +57,11 @@ int main(int argc, char **argv) {
                 loggerProcessStarted(eventsLogger, id, getpid(), getppid());
 
             // Wait Started from all children
-            while (started != proc_cnt - 1) {
-                if (receive_any(ctx, &msg) == 0) {
-                    if (msg.s_header.s_type == STARTED)
-                        started++;
-                    if (msg.s_header.s_type == DONE)
-                        done++;
-                }
+            while (current < proc_cnt) {
+                if (current == ctx->id)
+                    current++;
+                if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == STARTED)
+                    current++;
             }
             loggerProcessReceivedAllStarted(eventsLogger, id);
 
@@ -74,11 +71,12 @@ int main(int argc, char **argv) {
                 loggerProcessDone(eventsLogger, id);
 
             // Wait Done from all children
-            while (done < proc_cnt - 1) {
-                if (receive_any(ctx, &msg) == 0) {
-                    if (msg.s_header.s_type == DONE)
-                        done++;
-                }
+            current = 1;
+            while (current < proc_cnt) {
+                if (current == ctx->id)
+                    current++;
+                if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == DONE)
+                    current++;
             }
             loggerProcessReceivedAllDone(eventsLogger, id);
 
@@ -88,31 +86,25 @@ int main(int argc, char **argv) {
     }
 
     Message msg;
-    int started = 0;
-    int done = 0;
+    int current = 1;
 
     ContextPtr ctx = contextCreate(0, ipcCtx);
     // ipcContextPrepare(ipcCtx, 0);
 
     // Wait Started from all
     loggerProcessStarted(eventsLogger, ctx->id, getpid(), getppid());
-    while (started != proc_cnt) {
-        if (receive_any(ctx, &msg) == 0) {
-            if (msg.s_header.s_type == STARTED)
-                    started++;
-            if (msg.s_header.s_type == DONE)
-                    done++;
-        }
+    while (current < proc_cnt + 1) {
+        if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == STARTED)
+            current++;
     }
     loggerProcessReceivedAllStarted(eventsLogger, ctx->id);
 
     // Wait Done from all
     loggerProcessDone(eventsLogger, ctx->id);
-    while (done != proc_cnt) {
-        if (receive_any(ctx, &msg) == 0) {
-            if (msg.s_header.s_type == DONE)
-                done++;
-        }
+    current = 1;
+    while (current < proc_cnt + 1) {
+        if (receive(ctx, current, &msg) == 0 && msg.s_header.s_type == DONE)
+            current++;
     }
     loggerProcessReceivedAllDone(eventsLogger, ctx->id);
 
