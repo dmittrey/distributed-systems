@@ -30,3 +30,20 @@ add_custom_target(pa1
     COMMENT "Generate pa1 archive"
     VERBATIM
 )
+
+file(GLOB_RECURSE PA2_LIB_PACK_C_FILES pa2-lib/src/*.c)
+file(GLOB_RECURSE PA2_LIB_PACK_H_FILES pa2-lib/include/*.h)
+
+file(GLOB_RECURSE PA2_STARTER_PACK_H_FILES pa2345-starter/*.h)
+file(GLOB_RECURSE PA2_STARTER_PACK_C_FILES pa2345-starter/*.c)
+
+add_custom_target(pa2
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/pa2 ${CMAKE_SOURCE_DIR}/pa2.tar.gz
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/pa2
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA2_LIB_PACK_C_FILES} ${PA2_LIB_PACK_H_FILES} ${CMAKE_BINARY_DIR}/pa2
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA2_STARTER_PACK_C_FILES} ${PA2_STARTER_PACK_H_FILES} ${CMAKE_BINARY_DIR}/pa2
+    COMMAND ${CMAKE_COMMAND} -E tar czf ${CMAKE_SOURCE_DIR}/pa2.tar.gz ${CMAKE_BINARY_DIR}/pa2
+    DEPENDS pa2-app
+    COMMENT "Generate pa2 archive"
+    VERBATIM
+)
