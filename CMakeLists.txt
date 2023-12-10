@@ -6,7 +6,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -W -Wall -pedantic")
 add_subdirectory(pa1-starter)
 add_subdirectory(pa1-lib)
 
-add_executable(pa1-app pa1-lib/main.c)
+add_executable(pa1-app EXCLUDE_FROM_ALL pa1-lib/main.c)
 target_link_libraries(pa1-app pa1-lib)
 
 file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)
