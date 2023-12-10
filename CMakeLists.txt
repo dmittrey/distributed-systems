@@ -13,7 +13,7 @@ add_executable(pa1-app EXCLUDE_FROM_ALL pa1-lib/main.c)
 target_link_libraries(pa1-app pa1-lib)
 
 add_executable(pa2-app EXCLUDE_FROM_ALL pa2-lib/main.c)
-target_link_libraries(pa1-app pa2-lib)
+target_link_libraries(pa2-app pa2-lib)
 
 file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)
 file(GLOB_RECURSE PA1_LIB_PACK_H_FILES pa1-lib/include/*.h)
