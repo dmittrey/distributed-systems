@@ -6,11 +6,21 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -std=c99 -W -Wall -pedantic")
 add_subdirectory(pa1-starter)
 add_subdirectory(pa1-lib)
 
-add_executable(pa1 pa1-lib/main.c)
-target_link_libraries(pa1 pa1-lib)
+add_executable(pa1-app pa1-lib/main.c)
+target_link_libraries(pa1-app pa1-lib)
 
-add_custom_target(pack 
-    COMMAND
-        ${CMAKE_COMMAND} -E echo Hi this is a custom target
+file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)
+file(GLOB_RECURSE PA1_LIB_PACK_H_FILES pa1-lib/include/*.h)
+
+file(GLOB_RECURSE PA1_STARTER_PACK_H_FILES pa1-starter/*.h)
+
+add_custom_target(pa1
+    COMMAND ${CMAKE_COMMAND} -E make_directory pa1
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA1_LIB_PACK_C_FILES} ${PA1_LIB_PACK_H_FILES} pa1
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA1_STARTER_PACK_H_FILES} pa1 
+    COMMAND ${CMAKE_COMMAND} -E tar czf pa1.tar.gz pa1
+    DEPENDS pa1-app
+    COMMENT "Generate pa1 archive"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     VERBATIM
 )
