@@ -9,6 +9,8 @@
 
 void channelCreate(ChannelPtr ptr) {
     pipe(ptr->fd);
+    fcntl(ptr->fd[0], F_SETFL, fcntl(ptr->fd[0], F_GETFL) | O_NONBLOCK);
+    fcntl(ptr->fd[1], F_SETFL, fcntl(ptr->fd[1], F_GETFL) | O_NONBLOCK);
 }
 void channelDestroy(ChannelPtr instance) {
     close(instance->fd[0]);
