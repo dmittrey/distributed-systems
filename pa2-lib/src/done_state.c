@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "process/process_state.h"
+#include "process_state.h"
 
 void transitionToDoneState(ProcessStatePtr instance) {
     processStateDefaultImpl(instance);

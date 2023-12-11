@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "process/process_state.h"
-#include "process/done_state.h"
+#include "process_state.h"
+#include "done_state.h"
 
 #include "message.h"
 

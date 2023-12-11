@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "process/process_state.h"
-#include "process/running_state.h"
+#include "process_state.h"
+#include "running_state.h"
 
 #include "message.h"
 #include "logger_event.h"

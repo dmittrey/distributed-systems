@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "process/process_state.h"
+#include "process_state.h"
 
 static void defaultRecvStarted(ProcessStatePtr instance);
 static void defaultRecvTransfer(ProcessStatePtr instance, Message *msg);

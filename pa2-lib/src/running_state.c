@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "process/process_state.h"
-#include "process/reporting_state.h"
+#include "process_state.h"
+#include "reporting_state.h"
 
 #include "banking.h"
 #include "message.h"

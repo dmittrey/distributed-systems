@@ -7,8 +7,8 @@
 #include <sys/wait.h>
 
 #include "common.h"
-#include "process/process_state.h"
-#include "process/started_state.h"
+#include "process_state.h"
+#include "started_state.h"
 
 int validate(int argc, char **argv, int *proc_cnt)
 {
