@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -6,14 +5,20 @@
 #include "ipc_context.h"
 #include "logger_channel.h"
 
-IpcContextPtr ipcContextCreate(int proc_cnt) {
+struct IpcContext {
+    int host_cnt;
+    struct Channel **channels;
+    LoggerPtr logger;
+};
+
+IpcContextPtr ipcContextCreate(int host_cnt) {
     IpcContextPtr context = malloc(sizeof(struct IpcContext));
-    context->proc_cnt = proc_cnt;
-    context->channelLogger = loggerCreate(pipes_log);
-    context->channels = malloc(proc_cnt * sizeof(ChannelPtr));
-    for (int i = 0; i < proc_cnt; ++i) {
-        context->channels[i] = malloc(proc_cnt * sizeof(struct Channel));
-        for (int j = 0; j < proc_cnt; ++j) {
+    context->host_cnt = host_cnt;
+    context->logger = loggerCreate(pipes_log);
+    context->channels = malloc(host_cnt * sizeof(ChannelPtr));
+    for (int i = 0; i < host_cnt; ++i) {
+        context->channels[i] = malloc(host_cnt * sizeof(struct Channel));
+        for (int j = 0; j < host_cnt; ++j) {
             if (i != j)
                 channelCreate(&context->channels[i][j]);
         }
@@ -21,9 +26,9 @@ IpcContextPtr ipcContextCreate(int proc_cnt) {
     return context;
 }
 void ipcContextDestroy(IpcContextPtr instance) {
-    loggerDestroy(instance->channelLogger);
-    for (int i = 0; i < instance->proc_cnt; ++i) {
-        for (int j = 0; j < instance->proc_cnt; ++j) {
+    loggerDestroy(instance->logger);
+    for (int i = 0; i < instance->host_cnt; ++i) {
+        for (int j = 0; j < instance->host_cnt; ++j) {
             if (i != j)
                 channelDestroy(&instance->channels[i][j]);
         }
@@ -34,47 +39,46 @@ void ipcContextDestroy(IpcContextPtr instance) {
 }
 
 void ipcContextPrepare(IpcContextPtr instance, local_id id) {
-    for (int i = 0; i < instance->proc_cnt; ++i) {
-        for (int j = 0; j < instance->proc_cnt; ++j) {
+    for (int i = 0; i < instance->host_cnt; ++i) {
+        for (int j = 0; j < instance->host_cnt; ++j) {
             if (i == j) {
                 continue;
             }
             else if (id == i) {
                 channelCloseI(&instance->channels[i][j]);
-                loggerChannelIClosed(instance->channelLogger, id, &instance->channels[i][j]);
+                loggerChannelIClosed(instance->logger, id, &instance->channels[i][j]);
             }
             else if (id == j) {
                 channelCloseO(&instance->channels[i][j]);
-                loggerChannelOClosed(instance->channelLogger, id, &instance->channels[i][j]);
+                loggerChannelOClosed(instance->logger, id, &instance->channels[i][j]);
             }
             else {
                 channelCloseIO(&instance->channels[i][j]);
-                loggerChannelIOClosed(instance->channelLogger, id, &instance->channels[i][j]);
+                loggerChannelIOClosed(instance->logger, id, &instance->channels[i][j]);
             }
         }
     }
 }
 
 int ipcContextSend(const IpcContextPtr instance, local_id src, local_id dst, const Message *msg) {
-    assert(src >= 0 && src < instance->proc_cnt);
-    assert(dst >= 0 && src < instance->proc_cnt);
+    if (src >= instance->host_cnt || src < 0) {
+        printf("ERROR: SRC out of bound in ipcContextSend! (%d)", src);
+        return -1;
+    }
+    if (dst >= instance->host_cnt || dst < 0) {
+        printf("ERROR: DST out of bound in ipcContextSend! (%d)", dst);
+        return -1;
+    }
     return channelWrite(&instance->channels[src][dst], msg);
 }
 int ipcContextReceive(const IpcContextPtr instance, local_id src, local_id dst, Message *msg) {
-    return channelRead(&instance->channels[src][dst], msg);
-}
-int ipcContextReceiveAll(const IpcContextPtr instance, local_id dst, local_id min_src, MessageType status) {
-    Message msg;
-    while (min_src < instance->proc_cnt) {
-        if (min_src == dst) {
-            min_src++;
-        } else {
-            int ret = ipcContextReceive(instance, min_src, dst, &msg);
-            if (ret > 0 && msg.s_header.s_type == (int16_t) status)
-                min_src++;
-            else if (ret == -1)
-                return -1;
-        }
+    if (src >= instance->host_cnt || src < 0) {
+        printf("ERROR: SRC out of bound in ipcContextReceive! (%d)", src);
+        return -1;
     }
-    return 0;
+    if (dst >= instance->host_cnt || dst < 0) {
+        printf("ERROR: DST out of bound in ipcContextReceive! (%d)", dst);
+        return -1;
+    }
+    return channelRead(&instance->channels[src][dst], msg);
 }
