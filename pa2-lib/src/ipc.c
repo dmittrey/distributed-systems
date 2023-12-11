@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 #include "context.h"
 
@@ -34,7 +35,7 @@ int receive(void * self, local_id from, Message * msg) {
 int receive_any(void * self, Message * msg) {
     ContextPtr ctx = (ContextPtr) self;
     while (1) {
-        for (int id = 1; id < ctx->ipc->proc_cnt; ++id) {
+        for (int id = 0; id < ctx->ipc->proc_cnt; ++id) {
             if (ctx->id == id)
                 continue;
             if (receive(self, id, msg) == 0) {
