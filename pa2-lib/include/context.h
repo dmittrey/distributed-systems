@@ -45,6 +45,8 @@ ProcessStateType contextStateType(ContextPtr instance);
 ClientContextPtr clientContext(ContextPtr instance);
 ServerContextPtr serverContext(ContextPtr instance);
 
+int receiveAll(ContextPtr instance, local_id min_src, MessageType status);
+
 /* ClientContextPtr */
 
 ClientContextPtr clientContextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger);

@@ -11,25 +11,24 @@
 
 static void recvTransfer(ContextPtr instance, Message* msg);
 static void recvStop(ContextPtr instance);
-static void recvDone(ContextPtr instance);
 
 void transitionToRunningState(ContextPtr instance) {
     processStateDefaultImpl(instance);
     instance->state->recv_transfer = recvTransfer;
     instance->state->recv_stop = recvStop;
-    instance->state->recv_done = recvDone;
     instance->state->type = STATE_RUNNING;
 
     if (instance->type == CLIENT) {
         bank_robbery(instance, instance->host_cnt - 1);
         if (multicastStopMsg((ClientContextPtr)instance) == 0)
-            instance->is_stopped = TRUE;
+            transitionToReportingState(instance);
     }
 }
 
 static void recvTransfer(ContextPtr instance, Message* msg) {
     TransferOrder* transfer = (TransferOrder*)msg->s_payload;
-    if (instance->id == transfer->s_src) {
+    if (instance->id == transfer->s_src && instance->is_stopped == FALSE) {
+        msg->s_header.s_local_time = get_physical_time();
         decreaseBalance((ServerContextPtr)instance, transfer->s_amount);
         if (send(instance, transfer->s_dst, msg) == 0)
             loggerProcessTransferOut(instance->events_logger, transfer->s_src, transfer->s_dst, transfer->s_amount);
@@ -45,12 +44,10 @@ static void recvStop(ContextPtr instance) {
         instance->is_stopped = TRUE;
         if (multicastDoneMsg((ServerContextPtr)instance) == 0)
             loggerProcessDone(instance->events_logger, instance->id, serverContext(instance)->balance);
-    }
-}
-static void recvDone(ContextPtr instance) {
-    instance->state->done_cnt++;
-    if (instance->is_stopped && instance->state->done_cnt == instance->host_cnt - (instance->type == CLIENT ? 1 : 2)) {
-        loggerProcessReceivedAllDone(instance->events_logger, instance->id);
-        transitionToReportingState(instance);
+
+        if (receiveAll(instance, 1, DONE) == 0) {
+            loggerProcessReceivedAllDone(instance->events_logger, instance->id);
+            transitionToReportingState(instance);
+        }
     }
 }

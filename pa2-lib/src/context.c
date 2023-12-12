@@ -21,6 +21,22 @@ ServerContextPtr serverContext(ContextPtr instance) {
     return (ServerContextPtr) instance;
 }
 
+int receiveAll(ContextPtr instance, local_id min_src, MessageType status) {
+    Message msg;
+    while (min_src < instance->host_cnt) {
+        if (min_src == instance->id) {
+            min_src++;
+        } else {
+            int ret = ipcContextReceive(instance->ipc, min_src, instance->id, &msg);
+            if (ret > 0 && msg.s_header.s_type == (int16_t) status)
+                min_src++;
+            else if (ret == -1)
+                return -1;
+        }
+    }
+    return 0;
+}
+
 ClientContextPtr clientContextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger) {
     ClientContextPtr instance = (ClientContextPtr) malloc(sizeof(struct ClientContext));
     instance->ctx.id = id;

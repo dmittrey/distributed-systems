@@ -60,40 +60,17 @@ int main(int argc, char **argv) {
             transitionToStartedState((ContextPtr)server);
 
             Message msg;
-            local_id cur = 1;
-            while (contextStateType((ContextPtr)server) != STATE_DONE) {
-                int ret = -1;
-                if (contextStateType((ContextPtr)server) == STATE_RUNNING) {
-                    ret = receive_any(server, &msg);
-                } else {
-                    if (cur == id)
-                        ++cur;
-                    else if (cur > proc_cnt)
-                        cur = 1;
-                    else 
-                        if ((ret = receive(server, cur, &msg)))
-                            ++cur;
-                }
-
-                if (ret == 0) {
+            while (contextStateType((ContextPtr)server) != STATE_DONE)
+            {
+                if (receive_any(server, &msg) == 0)
+                {
                     switch (msg.s_header.s_type)
                     {
-                    case STARTED:
-                        server->ctx.state->recv_started((ContextPtr)server);
-                        break;
-                    case DONE: 
-                        server->ctx.state->recv_done((ContextPtr)server);
-                        break;
-                    case STOP:     
-                        server->ctx.state->recv_stop((ContextPtr)server);
-                        break;       
-                    case TRANSFER:     
+                    case TRANSFER:
                         server->ctx.state->recv_transfer((ContextPtr)server, &msg);
-                        break;   
-                    case BALANCE_HISTORY:
-                        server->ctx.state->recv_balance_hist((ContextPtr)server, &msg);
                         break;
-                    default:
+                    case STOP:
+                        server->ctx.state->recv_stop((ContextPtr)server);
                         break;
                     }
                 }
@@ -109,32 +86,16 @@ int main(int argc, char **argv) {
     transitionToStartedState((ContextPtr)client);
 
     Message msg;
-    local_id cur = 1;
     while (contextStateType((ContextPtr)client) != STATE_DONE)
     {
-        if (cur > proc_cnt)
-            cur = 1;
-        else if (receive(client, cur, &msg) == 0) {
-            switch (msg.s_header.s_type) {
-            case STARTED:
-                client->ctx.state->recv_started((ContextPtr)client);
-                break;
-            case DONE:
-                client->ctx.state->recv_done((ContextPtr)client);
-                break;
-            case STOP:
-                client->ctx.state->recv_stop((ContextPtr)client);
-                break;
-            case TRANSFER:
-                client->ctx.state->recv_transfer((ContextPtr)client, &msg);
-                break;
+        if (receive_any(client, &msg) == 0)
+        {
+            switch (msg.s_header.s_type)
+            {
             case BALANCE_HISTORY:
                 client->ctx.state->recv_balance_hist((ContextPtr)client, &msg);
                 break;
-            default:
-                break;
             }
-            ++cur;
         }
     }
 

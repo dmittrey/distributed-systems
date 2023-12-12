@@ -20,6 +20,9 @@ void processStateDefaultImpl(ContextPtr instance) {
 
 ProcessStatePtr processStateCreate() {
     ProcessStatePtr ptr = malloc(sizeof(struct ProcessState));
+    ptr->started_cnt = 0;
+    ptr->done_cnt = 0;
+    ptr->balance_history_cnt = 0;
     return ptr;
 }
 void processStateDestroy(ProcessStatePtr instance) {
