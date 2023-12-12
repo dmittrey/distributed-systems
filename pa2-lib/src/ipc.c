@@ -15,7 +15,7 @@ int send(void * self, local_id dst, const Message * msg) {
 
 int send_multicast(void * self, const Message * msg) {
     ContextPtr ctx = (ContextPtr) self;
-    for (int id = 0; id < ctx->ipc->proc_cnt; ++id) {
+    for (int id = 0; id < ctx->host_cnt; ++id) {
         if (ctx->id == id)
             continue;
         if (send(self, id, msg) < 0) {
@@ -35,7 +35,7 @@ int receive(void * self, local_id from, Message * msg) {
 int receive_any(void * self, Message * msg) {
     ContextPtr ctx = (ContextPtr) self;
     while (1) {
-        for (int id = 0; id < ctx->ipc->proc_cnt; ++id) {
+        for (int id = 0; id < ctx->host_cnt; ++id) {
             if (ctx->id == id)
                 continue;
             if (receive(self, id, msg) == 0) {

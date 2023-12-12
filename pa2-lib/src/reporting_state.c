@@ -4,30 +4,27 @@
 #include "process_state.h"
 #include "done_state.h"
 
+#include "context.h"
 #include "message.h"
 
-static void recvBalanceHistory(ProcessStatePtr instance, Message* msg);
+static void recvBalanceHistory(ContextPtr instance, Message* msg);
 
-void transitionToReportingState(ProcessStatePtr instance) {
+void transitionToReportingState(ContextPtr instance) {
     processStateDefaultImpl(instance);
-    instance->recv_balance_hist = recvBalanceHistory;
-    instance->state = STATE_REPORTING;
+    instance->state->recv_balance_hist = recvBalanceHistory;
+    instance->state->type = STATE_REPORTING;
 
-    if (instance->proc_ctx->id != 0) {
-        Message msg;
-        balanceHistoryMessage(&msg, instance->b_history);
-        if (send(instance->proc_ctx, 0, &msg) == 0) {
-            transitionToDoneState(instance);
-        }
-    }
+    if (instance->type == SERVER && sendBalanceHistory((ServerContextPtr)instance, 0) == 0)
+        transitionToDoneState(instance);
 }
 
-static void recvBalanceHistory(ProcessStatePtr instance, Message* msg) {
-    if (instance->proc_ctx->id == 0) {
-        instance->all_history->s_history[instance->all_history->s_history_len] = *(BalanceHistory*)msg->s_payload;
-        // printf("Redawdawdawdawdawdawdawd: %d", instance->all_history->s_history[instance->all_history->s_history_len].s_history_len);
-        instance->all_history->s_history_len++;
-        if (instance->all_history->s_history_len == instance->proc_ctx->ipc->proc_cnt - 1)
+static void recvBalanceHistory(ContextPtr instance, Message* msg) {
+    if (instance->type == CLIENT) {
+        BalanceHistory *b_history = (BalanceHistory*) msg->s_payload;
+        appendBalanceHistory((ClientContextPtr)instance, b_history);
+
+        instance->state->balance_history_cnt++;
+        if (instance->state->balance_history_cnt == instance->host_cnt - 1)
             transitionToDoneState(instance);
     }
 }

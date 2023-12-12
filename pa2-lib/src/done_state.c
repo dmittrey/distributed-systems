@@ -1,13 +1,12 @@
 #include <stdio.h>
 
-#include "process_state.h"
+#include "context.h"
 
-void transitionToDoneState(ProcessStatePtr instance) {
+void transitionToDoneState(ContextPtr instance) {
     processStateDefaultImpl(instance);
+    instance->state->type = STATE_DONE;
 
-    if (instance->proc_ctx->id == 0) {
-        print_history(instance->all_history);
+    if (instance->type == CLIENT) {
+        print_history(&clientContext(instance)->history);
     }
-
-    instance->state = STATE_DONE;
 }

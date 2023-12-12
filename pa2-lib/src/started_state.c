@@ -3,30 +3,26 @@
 #include "process_state.h"
 #include "running_state.h"
 
+#include "context.h"
 #include "message.h"
 #include "logger_event.h"
 
-static void recvStarted(ProcessStatePtr instance);
+static void recvStarted(ContextPtr instance);
 
-void transitionToStartedState(ProcessStatePtr instance) {
+void transitionToStartedState(ContextPtr instance) {
     processStateDefaultImpl(instance);
-    instance->recv_started = recvStarted;
-    instance->state = STATE_STARTED;
+    instance->state->recv_started = recvStarted;
+    instance->state->type = STATE_STARTED;
 
-    if (instance->proc_ctx->id == 0) {
-        loggerProcessStarted(instance->events_logger, instance->proc_ctx->id, getpid(), getppid(), processStateGetBalance(instance));
-    } else {
-        Message msg;
-        startedMessage(&msg, instance->proc_ctx->id, getpid(), getppid(), processStateGetBalance(instance));
-        if (send_multicast(instance->proc_ctx, &msg) == 0)
-            loggerProcessStarted(instance->events_logger, instance->proc_ctx->id, getpid(), getppid(), processStateGetBalance(instance));
-    }
+    if (instance->type == SERVER && multicastStartedMsg((ServerContextPtr)instance) == 0)
+        loggerProcessStarted(instance->events_logger, instance->id, getpid(), getppid(),
+                             ((ServerContextPtr)instance)->balance);
 }
 
-static void recvStarted(ProcessStatePtr instance) {
-    instance->started_cnt++;
-    if (instance->started_cnt == instance->proc_ctx->ipc->proc_cnt - (instance->proc_ctx->id == 0 ? 1 : 2)) {
-        loggerProcessReceivedAllStarted(instance->events_logger, instance->proc_ctx->id);
+static void recvStarted(ContextPtr instance) {
+    instance->state->started_cnt++;
+    if (instance->state->started_cnt == instance->host_cnt - (instance->type == CLIENT ? 1 : 2)) {
+        loggerProcessReceivedAllStarted(instance->events_logger, instance->id);
         transitionToRunningState(instance);
     }
 }

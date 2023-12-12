@@ -1,3 +1,3 @@
 #include "process_state.h"
 
-void transitionToRunningState(ProcessStatePtr state);
+void transitionToRunningState(ContextPtr instance);

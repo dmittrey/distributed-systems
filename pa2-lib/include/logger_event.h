@@ -3,7 +3,6 @@
 #include <sys/types.h>
 
 #include "banking.h"
-#include "ipc.h"
 #include "logger.h"
 
 void loggerProcessStarted(LoggerPtr instance, local_id id, pid_t pid, pid_t ppid, balance_t balance);
