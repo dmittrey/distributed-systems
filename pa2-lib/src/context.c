@@ -100,25 +100,50 @@ int sendAckMsg(ServerContextPtr instance, local_id dst) {
     return send(instance, dst, &msg);
 }
 int sendBalanceHistory(ServerContextPtr instance, local_id dst) {
-    printf("Sending balance history from %d to %d\n", instance->ctx.id, dst);
+    // printf("Sending balance history from %d to %d\n", instance->ctx.id, dst);
     Message msg;
+    prepareBalance(instance);
     balanceHistoryMessage(&msg, &instance->b_history);
     return send(instance, dst, &msg);
 }
 
 void decreaseBalance(ServerContextPtr instance, balance_t amount) {
+    // printf("%d: Appending balance history on id=%d, time=%d\n", instance->ctx.id, instance->b_history.s_history_len, get_physical_time());
+    BalanceState state = (BalanceState){.s_balance = instance->balance,
+                                        .s_balance_pending_in = 0};
+    while (instance->b_history.s_history_len < get_physical_time()) {
+        state.s_time = instance->b_history.s_history_len;
+        instance->b_history.s_history[instance->b_history.s_history_len] = state;
+        instance->b_history.s_history_len += 1;
+    }
     instance->balance -= amount;
-    instance->b_history.s_history[instance->b_history.s_history_len] = (BalanceState){.s_balance = instance->balance,
-                                                                                      .s_balance_pending_in = 0,
-                                                                                      .s_time = get_physical_time()};
+    state.s_balance = instance->balance;
+    state.s_time = get_physical_time();
+    instance->b_history.s_history[instance->b_history.s_history_len] = state;
     instance->b_history.s_history_len += 1;
-    printf("Add balance state (amount = %d, time = %d)\n", instance->balance, get_physical_time());
 }
 void increaseBalance(ServerContextPtr instance, balance_t amount) {
+    // printf("%d: Appending balance history on id=%d, time=%d\n", instance->ctx.id, instance->b_history.s_history_len, get_physical_time());
+    BalanceState state = (BalanceState){.s_balance = instance->balance,
+                                        .s_balance_pending_in = 0};
+    while (instance->b_history.s_history_len < get_physical_time()) {
+        state.s_time = instance->b_history.s_history_len;
+        instance->b_history.s_history[instance->b_history.s_history_len] = state;
+        instance->b_history.s_history_len += 1;
+    }
     instance->balance += amount;
-    instance->b_history.s_history[instance->b_history.s_history_len] = (BalanceState){.s_balance = instance->balance,
-                                                                                      .s_balance_pending_in = 0,
-                                                                                      .s_time = get_physical_time()};
+    state.s_balance = instance->balance;
+    state.s_time = get_physical_time();
+    instance->b_history.s_history[instance->b_history.s_history_len] = state;
     instance->b_history.s_history_len += 1;
-    printf("Add balance state (amount = %d, time = %d)\n", instance->balance, get_physical_time());
+}
+void prepareBalance(ServerContextPtr instance) {
+    // printf("%d: Preparing %d of %d\n", instance->ctx.id, instance->b_history.s_history_len, get_physical_time());
+    instance->b_history.s_history_len = get_physical_time() + 1;
+    for (int i = 0; i < instance->b_history.s_history_len; ++i) {
+        if (instance->b_history.s_history[i + 1].s_time == 0) {
+            instance->b_history.s_history[i + 1] = instance->b_history.s_history[i];
+            instance->b_history.s_history[i + 1].s_time = i + 1;
+        }
+    }
 }

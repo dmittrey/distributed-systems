@@ -69,3 +69,4 @@ int sendBalanceHistory(ServerContextPtr instance, local_id dst);
 
 void decreaseBalance(ServerContextPtr instance, balance_t amount);
 void increaseBalance(ServerContextPtr instance, balance_t amount);
+void prepareBalance(ServerContextPtr instance);

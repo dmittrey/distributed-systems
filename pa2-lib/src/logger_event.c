@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/time.h>
 
 #include "pa2345.h"
 #include "logger_event.h"

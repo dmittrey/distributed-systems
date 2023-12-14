@@ -20,8 +20,11 @@ void transitionToRunningState(ContextPtr instance) {
 
     if (instance->type == CLIENT) {
         bank_robbery(instance, instance->host_cnt - 1);
-        if (multicastStopMsg((ClientContextPtr)instance) == 0)
+        assert(multicastStopMsg((ClientContextPtr)instance) == 0);
+        if (receiveAll(instance, 1, DONE) == 0) {
+            loggerProcessReceivedAllDone(instance->events_logger, instance->id);
             transitionToReportingState(instance);
+        }
     }
 }
 
