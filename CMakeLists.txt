@@ -8,12 +8,16 @@ add_subdirectory(pa2345-starter)
 
 add_subdirectory(pa1-lib)
 add_subdirectory(pa2-lib)
+add_subdirectory(pa3-lib)
 
 add_executable(pa1-app EXCLUDE_FROM_ALL pa1-lib/main.c)
 target_link_libraries(pa1-app pa1-lib)
 
 add_executable(pa2-app EXCLUDE_FROM_ALL pa2-lib/main.c)
 target_link_libraries(pa2-app pa2-lib)
+
+add_executable(pa3-app EXCLUDE_FROM_ALL pa3-lib/main.c)
+target_link_libraries(pa3-app pa3-lib)
 
 file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)
 file(GLOB_RECURSE PA1_LIB_PACK_H_FILES pa1-lib/include/*.h)
@@ -41,5 +45,18 @@ add_custom_target(pa2
     COMMAND ${CMAKE_COMMAND} -E tar czf ${CMAKE_SOURCE_DIR}/pa2.tar.gz ${CMAKE_BINARY_DIR}/pa2
     DEPENDS pa2-app
     COMMENT "Generate pa2 archive"
+    VERBATIM
+)
+
+file(GLOB_RECURSE PA3_LIB_PACK_C_FILES pa3-lib/src/*.c)
+file(GLOB_RECURSE PA3_LIB_PACK_H_FILES pa3-lib/include/*.h)
+
+add_custom_target(pa3
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/pa3 ${CMAKE_SOURCE_DIR}/pa3.tar.gz
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/pa3
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA3_LIB_PACK_C_FILES} ${PA3_LIB_PACK_H_FILES} ${CMAKE_SOURCE_DIR}/pa3-lib/main.c ${CMAKE_BINARY_DIR}/pa3
+    COMMAND ${CMAKE_COMMAND} -E tar czf ${CMAKE_SOURCE_DIR}/pa3.tar.gz ${CMAKE_BINARY_DIR}/pa3
+    DEPENDS pa3-app
+    COMMENT "Generate pa3 archive"
     VERBATIM
 )
