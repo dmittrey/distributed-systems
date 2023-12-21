@@ -7,8 +7,6 @@
 #include "context.h"
 #include "message.h"
 
-extern timestamp_t lamport_time;
-
 static void recvBalanceHistory(ContextPtr instance, Message* msg);
 
 void transitionToReportingState(ContextPtr instance) {
@@ -22,7 +20,6 @@ void transitionToReportingState(ContextPtr instance) {
 
 static void recvBalanceHistory(ContextPtr instance, Message* msg) {
     if (instance->type == CLIENT) {
-        lamport_time++;
         BalanceHistory *b_history = (BalanceHistory*) msg->s_payload;
         appendBalanceHistory((ClientContextPtr)instance, b_history);
 

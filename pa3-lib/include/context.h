@@ -45,7 +45,7 @@ ProcessStateType contextStateType(ContextPtr instance);
 ClientContextPtr clientContext(ContextPtr instance);
 ServerContextPtr serverContext(ContextPtr instance);
 
-int receiveAll(ContextPtr instance, local_id min_src, MessageType status);
+int receive_all(void* instance, local_id min_src, MessageType status);
 
 /* ClientContextPtr */
 
@@ -68,5 +68,5 @@ int sendAckMsg(ServerContextPtr instance, local_id dst);
 int sendBalanceHistory(ServerContextPtr instance, local_id dst);
 
 void decreaseBalance(ServerContextPtr instance, balance_t amount);
-void increaseBalance(ServerContextPtr instance, balance_t amount);
+void increaseBalance(ServerContextPtr instance, timestamp_t send_time, balance_t amount);
 void prepareBalance(ServerContextPtr instance);

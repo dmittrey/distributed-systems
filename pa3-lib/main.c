@@ -12,8 +12,6 @@
 #include "ipc_context.h"
 #include "context.h"
 
-timestamp_t lamport_time;
-
 int validate(int argc, char **argv, int *proc_cnt)
 {
     if (argc < 4)

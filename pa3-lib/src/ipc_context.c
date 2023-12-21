@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include "ipc_context.h"
-#include "logger_channel.h"
+#include "logger.h"
 
 struct IpcContext {
     int host_cnt;
