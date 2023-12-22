@@ -19,6 +19,9 @@ target_link_libraries(pa2-app pa2-lib)
 add_executable(pa3-app EXCLUDE_FROM_ALL pa3-lib/main.c)
 target_link_libraries(pa3-app pa3-lib)
 
+add_executable(pa4-app EXCLUDE_FROM_ALL pa4-lib/main.c)
+target_link_libraries(pa4-app pa4-lib)
+
 file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)
 file(GLOB_RECURSE PA1_LIB_PACK_H_FILES pa1-lib/include/*.h)
 
@@ -58,5 +61,18 @@ add_custom_target(pa3
     COMMAND ${CMAKE_COMMAND} -E tar czf ${CMAKE_SOURCE_DIR}/pa3.tar.gz ${CMAKE_BINARY_DIR}/pa3
     DEPENDS pa3-app
     COMMENT "Generate pa3 archive"
+    VERBATIM
+)
+
+file(GLOB_RECURSE PA4_LIB_PACK_C_FILES pa4-lib/src/*.c)
+file(GLOB_RECURSE PA4_LIB_PACK_H_FILES pa4-lib/include/*.h)
+
+add_custom_target(pa4
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/pa4 ${CMAKE_SOURCE_DIR}/pa4.tar.gz
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/pa4
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PA4_LIB_PACK_C_FILES} ${PA4_LIB_PACK_H_FILES} ${CMAKE_SOURCE_DIR}/pa4-lib/main.c ${CMAKE_BINARY_DIR}/pa4
+    COMMAND ${CMAKE_COMMAND} -E tar czf ${CMAKE_SOURCE_DIR}/pa4.tar.gz ${CMAKE_BINARY_DIR}/pa4
+    DEPENDS pa4-app
+    COMMENT "Generate pa4 archive"
     VERBATIM
 )
