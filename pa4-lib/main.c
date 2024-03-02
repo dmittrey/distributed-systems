@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h> 
 
 #include "common.h"
 
@@ -14,8 +15,9 @@
 #include "ipc_ctx.h"
 #include "context.h"
 
-int validate(int argc, char **argv, int *proc_cnt)
+int validate(int argc, char **argv, int *proc_cnt, bool_t *is_mutexl)
 {
+    *is_mutexl = FALSE;
     if (argc < 3)
     {
         printf("USAGE: ./prog -p X\n");
@@ -31,6 +33,16 @@ int validate(int argc, char **argv, int *proc_cnt)
         printf("ERROR: Number of proc not specified!\n");
         return 1;
     }
+
+    if (argc == 4 && strcmp(argv[3], "--mutexl") == 0) 
+    {
+        *is_mutexl = TRUE;
+        printf("DEBUG: Mutex enabled!\n");
+    } else if (argc == 4) {
+        printf("ERROR: Wrong argument!\n");
+        return 1;
+    }
+
     if (*proc_cnt < 1 || *proc_cnt > 10)
     {
         printf("ERROR: Specify proc count in range [1:10]!\n");
@@ -43,8 +55,9 @@ int validate(int argc, char **argv, int *proc_cnt)
 int main(int argc, char **argv) {
     int proc_cnt = 0;
     int err = 0;
+    bool_t is_mutexl = FALSE;
 
-    if ((err = validate(argc, argv, &proc_cnt)))
+    if ((err = validate(argc, argv, &proc_cnt, &is_mutexl)))
         return err;
     
     IpcContextPtr ipcCtx = ipcContextCreate(proc_cnt + 1);
