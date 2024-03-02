@@ -7,14 +7,16 @@
 #include <sys/wait.h>
 
 #include "common.h"
-#include "process_state.h"
-#include "started_state.h"
-#include "ipc_context.h"
+
+#include "state.h"
+#include "state_started.h"
+
+#include "ipc_ctx.h"
 #include "context.h"
 
 int validate(int argc, char **argv, int *proc_cnt)
 {
-    if (argc < 4)
+    if (argc < 3)
     {
         printf("USAGE: ./prog -p X\n");
         return 1;
@@ -34,11 +36,6 @@ int validate(int argc, char **argv, int *proc_cnt)
         printf("ERROR: Specify proc count in range [1:10]!\n");
         return 1;
     }
-    if (argc != 3 + *proc_cnt)
-    {
-        printf("ERROR: Specify balance for every proc!\n");
-        return 1;
-    }
 
     return 0;
 }
@@ -55,49 +52,22 @@ int main(int argc, char **argv) {
     for (int id = 1; id < proc_cnt + 1; ++id) {
         pid_t ret = fork();
         if (!ret) {
-            ServerContextPtr server = serverContextCreate(id, proc_cnt + 1, ipcCtx, atoi(argv[id + 2]), eventsLogger);
+            ContextPtr server = contextCreate(id, proc_cnt + 1, ipcCtx, eventsLogger, CHILD);
             ipcContextPrepare(ipcCtx, id);
             transitionToStartedState((ContextPtr)server);
 
-            Message msg;
-            while (contextStateType((ContextPtr)server) != STATE_DONE)
-            {
-                if (receive_any(server, &msg) == 0)
-                {
-                    switch (msg.s_header.s_type)
-                    {
-                    case TRANSFER:
-                        server->ctx.state->recv_transfer((ContextPtr)server, &msg);
-                        break;
-                    case STOP:
-                        server->ctx.state->recv_stop((ContextPtr)server);
-                        break;
-                    }
-                }
-            }
+            while (contextStateType(server) != STATE_DONE);
 
             contextDestroy((ContextPtr)server);
             exit(1);
         }
     }
 
-    ClientContextPtr client = clientContextCreate(0, proc_cnt + 1, ipcCtx, eventsLogger);
+    ContextPtr client = contextCreate(0, proc_cnt + 1, ipcCtx, eventsLogger, ROOT);
     ipcContextPrepare(ipcCtx, 0);
     transitionToStartedState((ContextPtr)client);
 
-    Message msg;
-    while (contextStateType((ContextPtr)client) != STATE_DONE)
-    {
-        if (receive_any(client, &msg) == 0)
-        {
-            switch (msg.s_header.s_type)
-            {
-            case BALANCE_HISTORY:
-                client->ctx.state->recv_balance_hist((ContextPtr)client, &msg);
-                break;
-            }
-        }
-    }
+    while (contextStateType((ContextPtr)client) != STATE_DONE);
 
     loggerDestroy(eventsLogger);
     ipcContextDestroy(ipcCtx);
@@ -105,5 +75,6 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < proc_cnt; i++)
         wait(NULL);
+
     return 0;
 }

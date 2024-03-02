@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "common.h"
-#include "ipc_context.h"
+#include "ipc_ctx.h"
 #include "logger.h"
 
 struct IpcContext {

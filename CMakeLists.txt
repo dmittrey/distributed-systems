@@ -9,6 +9,7 @@ add_subdirectory(pa2345-starter)
 add_subdirectory(pa1-lib)
 add_subdirectory(pa2-lib)
 add_subdirectory(pa3-lib)
+add_subdirectory(pa4-lib)
 
 add_executable(pa1-app EXCLUDE_FROM_ALL pa1-lib/main.c)
 target_link_libraries(pa1-app pa1-lib)
@@ -19,7 +20,7 @@ target_link_libraries(pa2-app pa2-lib)
 add_executable(pa3-app EXCLUDE_FROM_ALL pa3-lib/main.c)
 target_link_libraries(pa3-app pa3-lib)
 
-add_executable(pa4-app EXCLUDE_FROM_ALL pa4-lib/main.c)
+add_executable(pa4-app pa4-lib/main.c)
 target_link_libraries(pa4-app pa4-lib)
 
 file(GLOB_RECURSE PA1_LIB_PACK_C_FILES pa1-lib/src/*.c)

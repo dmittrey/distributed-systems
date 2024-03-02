@@ -1,21 +1,18 @@
 #pragma once
 
 #include "banking.h"
-#include "ipc_context.h"
+#include "ipc_ctx.h"
 #include "logger.h"
-#include "process_state.h"
+#include "state.h"
 
 typedef uint8_t bool_t;
 
 #define FALSE 0
 #define TRUE 1
 
-typedef struct ClientContext* ClientContextPtr;
-typedef struct ServerContext* ServerContextPtr;
-
 typedef enum ContextType {
-    CLIENT = 0,
-    SERVER,
+    ROOT = 0,
+    CHILD,
 } ContextType;
 
 struct Context {
@@ -23,50 +20,16 @@ struct Context {
     int host_cnt;
     IpcContextPtr ipc;
     ContextType type;
-    ProcessStatePtr state;
+    StatePtr state;
     LoggerPtr events_logger;
-    bool_t is_stopped;
 };
 
-struct ClientContext {
-    struct Context ctx;
-    AllHistory history;
-};
-
-struct ServerContext {
-    struct Context ctx;
-    balance_t balance;
-    BalanceHistory b_history;
-};
-
+ContextPtr contextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger, ContextType type);
 void contextDestroy(ContextPtr instance);
-ProcessStateType contextStateType(ContextPtr instance);
 
-ClientContextPtr clientContext(ContextPtr instance);
-ServerContextPtr serverContext(ContextPtr instance);
+StateType contextStateType(ContextPtr instance);
 
 int receive_all(void* instance, local_id min_src, MessageType status);
 
-/* ClientContextPtr */
-
-ClientContextPtr clientContextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger);
-
-int multicastStopMsg(ClientContextPtr instance);
-
-int sendTransfer(ClientContextPtr instance, local_id src, local_id dst, balance_t amount);
-
-void appendBalanceHistory(ClientContextPtr instance, BalanceHistory *balance_history);
-
-/* ServerContextPtr */
-
-ServerContextPtr serverContextCreate(local_id id, int host_cnt, IpcContextPtr ipc, balance_t balance, LoggerPtr events_logger);
-
-int multicastStartedMsg(ServerContextPtr instance);
-int multicastDoneMsg(ServerContextPtr instance);
-
-int sendAckMsg(ServerContextPtr instance, local_id dst);
-int sendBalanceHistory(ServerContextPtr instance, local_id dst);
-
-void decreaseBalance(ServerContextPtr instance, balance_t amount);
-void increaseBalance(ServerContextPtr instance, timestamp_t send_time, balance_t amount);
-void prepareBalance(ServerContextPtr instance);
+int multicastStartedMsg(ContextPtr instance);
+int multicastDoneMsg(ContextPtr instance);
