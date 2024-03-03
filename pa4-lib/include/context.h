@@ -4,11 +4,7 @@
 #include "ipc_ctx.h"
 #include "logger.h"
 #include "state.h"
-
-typedef uint8_t bool_t;
-
-#define FALSE 0
-#define TRUE 1
+#include "queue.h"
 
 typedef enum ContextType {
     ROOT = 0,
@@ -21,6 +17,7 @@ struct Context {
     IpcContextPtr ipc;
     ContextType type;
     StatePtr state;
+    QueuePtr queue;
     LoggerPtr events_logger;
 };
 
@@ -29,6 +26,7 @@ void contextDestroy(ContextPtr instance);
 
 StateType contextStateType(ContextPtr instance);
 
+int receive_any_with_sender(void* instance, local_id *sender, Message * msg);
 int receive_all(void* instance, local_id min_src, MessageType status);
 
 int multicastStartedMsg(ContextPtr instance);

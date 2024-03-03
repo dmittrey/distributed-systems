@@ -60,6 +60,23 @@ int receive_any(void * self, Message * msg) {
     }
 }
 
+int receive_any_with_sender(void* self, local_id *sender, Message * msg) {
+    ContextPtr ctx = (ContextPtr) self;
+    while (1) {
+        for (int id = 0; id < ctx->host_cnt; ++id) {
+            if (ctx->id == id)
+                continue;
+            if (receive(self, id, msg) == 0) {
+                lamport_time++;
+                if (msg->s_header.s_local_time >= lamport_time)
+                    lamport_time = msg->s_header.s_local_time + 1;
+                *sender = id;
+                return 0;
+            }
+        }
+    }
+}
+
 int receive_all(void* self, local_id min_src, MessageType status) {
     ContextPtr ctx = (ContextPtr) self;
     Message msg;

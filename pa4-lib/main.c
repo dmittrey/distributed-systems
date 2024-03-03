@@ -67,9 +67,25 @@ int main(int argc, char **argv) {
         if (!ret) {
             ContextPtr server = contextCreate(id, proc_cnt + 1, ipcCtx, eventsLogger, CHILD);
             ipcContextPrepare(ipcCtx, id);
-            transitionToStartedState((ContextPtr)server);
+            transitionToStartedState(server);
 
-            while (contextStateType(server) != STATE_DONE);
+            Message msg;
+            local_id sender;
+            while (contextStateType(server) != STATE_DONE) {
+                if (receive_any_with_sender(server, &sender, &msg) == 0) {
+                    switch (msg.s_header.s_type) {
+                    case CS_REQUEST:
+                        server->state->recv_cs_request(server, msg.s_header.s_local_time, sender);
+                        break;
+                    case CS_REPLY:
+                        server->state->recv_cs_reply(server, msg.s_header.s_local_time, sender);
+                        break;
+                    case CS_RELEASE:
+                        server->state->recv_cs_release(server, msg.s_header.s_local_time, sender);
+                        break;
+                    }
+                }
+            }
 
             contextDestroy((ContextPtr)server);
             exit(1);
@@ -80,7 +96,7 @@ int main(int argc, char **argv) {
     ipcContextPrepare(ipcCtx, 0);
     transitionToStartedState((ContextPtr)client);
 
-    while (contextStateType((ContextPtr)client) != STATE_DONE);
+    while (contextStateType(client) != STATE_DONE);
 
     loggerDestroy(eventsLogger);
     ipcContextDestroy(ipcCtx);

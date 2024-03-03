@@ -12,11 +12,13 @@ ContextPtr contextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr
     instance->ipc = ipc;
     instance->type = type;
     instance->state = stateCreate();
+    instance->queue = queueCreate();
     instance->events_logger = events_logger;
     return instance;
 }
 void contextDestroy(ContextPtr instance) {
     stateDestroy(instance->state);
+    queueDestroy(instance->queue);
     free(instance);
 }
 
