@@ -8,6 +8,7 @@ static struct QueueItem* createQueueItem(timestamp_t l_time, local_id id) {
     struct QueueItem* newItem = (struct QueueItem*)malloc(sizeof(struct QueueItem));
     newItem->ltime = l_time;
     newItem->id = id;
+    newItem->apprvd_replies = 0;
     newItem->next = NULL;
     return newItem;
 }
@@ -50,9 +51,6 @@ void queuePush(QueuePtr q, timestamp_t ltime, local_id id) {
         }
     }
 }
-QueueItemPtr queueGet(QueuePtr q) {
-    return q->front;
-}
 QueueItemPtr queuePop(QueuePtr q) {
     if (q->front == NULL) {
         return NULL;
@@ -65,6 +63,25 @@ QueueItemPtr queuePop(QueuePtr q) {
     return temp;
 }
 
+QueueItemPtr queueGet(QueuePtr q) {
+    return q->front;
+}
+QueueItemPtr queueRefresh(QueuePtr q, local_id id, timestamp_t ltime) {
+    if (q->front == NULL) {
+        printf("Queue is empty\n");
+        return NULL;
+    }
+
+    QueueItemPtr current = q->front;
+    while (current != NULL) {
+        if (current->id != id && current->ltime < ltime)
+            current->apprvd_replies++;
+
+        current = current->next;
+    }
+    return current;
+}
+
 void queuePrint(QueuePtr q, local_id id) {
     printf("Queue print for %1d: \n", id);
     if (q->front == NULL) {
@@ -75,7 +92,7 @@ void queuePrint(QueuePtr q, local_id id) {
     QueueItemPtr current = q->front;
     int i = 1;
     while (current != NULL) {
-        printf("%d: Timestamp: %d, ID: %d\n", i++, current->ltime, current->id);
+        printf("%d: Timestamp: %d, ID: %d, Aprvd: %d\n", i++, current->ltime, current->id, current->apprvd_replies);
         current = current->next;
     }
 }

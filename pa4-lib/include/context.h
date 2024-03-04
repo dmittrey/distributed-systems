@@ -19,9 +19,10 @@ struct Context {
     StatePtr state;
     QueuePtr queue;
     LoggerPtr events_logger;
+    bool_t is_mutexl;
 };
 
-ContextPtr contextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger, ContextType type);
+ContextPtr contextCreate(local_id id, int host_cnt, IpcContextPtr ipc, LoggerPtr events_logger, ContextType type, bool_t is_mutexl);
 void contextDestroy(ContextPtr instance);
 
 StateType contextStateType(ContextPtr instance);
@@ -31,3 +32,5 @@ int receive_all(void* instance, local_id min_src, MessageType status);
 
 int multicastStartedMsg(ContextPtr instance);
 int multicastDoneMsg(ContextPtr instance);
+
+int sendCSReply(ContextPtr instance, local_id dst);

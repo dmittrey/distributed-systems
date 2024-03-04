@@ -20,10 +20,8 @@ void stateDefaultImpl(ContextPtr instance) {
 
 StatePtr stateCreate() {
     StatePtr ptr = malloc(sizeof(struct State));
-    ptr->is_req = FALSE;
-    ptr->is_aprvd = FALSE;
-    ptr->req_num = 1;
-    ptr->reply_cnt = 0;
+    ptr->req_num = 0;
+    ptr->done_cnt = 0;
     return ptr;
 }
 void stateDestroy(StatePtr instance) {
@@ -31,21 +29,27 @@ void stateDestroy(StatePtr instance) {
 }
 
 static void defaultRecvStarted(ContextPtr instance) {
-    printf("%1d: %d: Stub for defaultRecvStarted\n", instance->id, instance->state->type);
+    // printf("%1d: %d: Stub for defaultRecvStarted\n", instance->id, instance->state->type);
 }
 
 static void defaultRecvCSRequest(ContextPtr instance, timestamp_t l_time, local_id sender_id) {
-    printf("%1d: %d: Stub for defaultRecvCSRequest (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
+    sendCSReply(instance, sender_id);
+    // printf("%1d: %d: Stub for defaultRecvCSRequest (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
 }
 
 static void defaultRecvCSReply(ContextPtr instance, timestamp_t l_time, local_id sender_id) {
-    printf("%1d: %d: Stub for defaultRecvCSReply (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
+    // printf("%1d: %d: Stub for defaultRecvCSReply (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
 }
 
 static void defaultRecvCSRelease(ContextPtr instance, timestamp_t l_time, local_id sender_id) {
-    printf("%1d: %d: Stub for defaultRecvCSRelease (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
+    // printf("%1d: %d: Stub for defaultRecvCSRelease (%d, %1d)\n", instance->id, instance->state->type, l_time, sender_id);
 }
 
 static void defaultRecvDone(ContextPtr instance) {
-    printf("%1d: %d: Stub for defaultRecvDone\n", instance->id, instance->state->type);
+    // printf("%1d: %d: Stub for defaultRecvDone new : %d\n", instance->id, instance->state->type, instance->state->done_cnt);
+    instance->state->done_cnt += 1;
+    if (instance->state->type == STATE_HALF_DONE && instance->state->done_cnt == instance->host_cnt - 2) {
+        loggerProcessReceivedAllDone(instance->events_logger, instance->id);
+        instance->state->type = STATE_DONE;
+    }
 }

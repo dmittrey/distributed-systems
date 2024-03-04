@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "state.h"
-#include "state_running.h"
+#include "state_started.h"
+#include "state_request_cs.h"
 
 #include "context.h"
 #include "message.h"
@@ -21,6 +21,6 @@ void transitionToStartedState(ContextPtr instance) {
 
     if (receive_all(instance, 1, STARTED) == 0) {
         loggerProcessReceivedAllStarted(instance->events_logger, instance->id);
-        transitionToRunningState(instance);
+        transitionToRequestCSState(instance);
     }
 }

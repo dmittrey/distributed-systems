@@ -65,42 +65,43 @@ int main(int argc, char **argv) {
     for (int id = 1; id < proc_cnt + 1; ++id) {
         pid_t ret = fork();
         if (!ret) {
-            ContextPtr server = contextCreate(id, proc_cnt + 1, ipcCtx, eventsLogger, CHILD);
+            ContextPtr child = contextCreate(id, proc_cnt + 1, ipcCtx, eventsLogger, CHILD, is_mutexl);
             ipcContextPrepare(ipcCtx, id);
-            transitionToStartedState(server);
+            transitionToStartedState(child);
 
             Message msg;
             local_id sender;
-            while (contextStateType(server) != STATE_DONE) {
-                if (receive_any_with_sender(server, &sender, &msg) == 0) {
+            while (contextStateType(child) != STATE_DONE) {
+                if (receive_any_with_sender(child, &sender, &msg) == 0) {
                     switch (msg.s_header.s_type) {
                     case CS_REQUEST:
-                        server->state->recv_cs_request(server, msg.s_header.s_local_time, sender);
+                        child->state->recv_cs_request(child, msg.s_header.s_local_time, sender);
                         break;
                     case CS_REPLY:
-                        server->state->recv_cs_reply(server, msg.s_header.s_local_time, sender);
+                        child->state->recv_cs_reply(child, msg.s_header.s_local_time, sender);
                         break;
                     case CS_RELEASE:
-                        server->state->recv_cs_release(server, msg.s_header.s_local_time, sender);
+                        child->state->recv_cs_release(child, msg.s_header.s_local_time, sender);
+                        break;
+                    case DONE:
+                        child->state->recv_done(child);
                         break;
                     }
                 }
             }
-
-            contextDestroy((ContextPtr)server);
+            
+            contextDestroy(child);
             exit(1);
         }
     }
 
-    ContextPtr client = contextCreate(0, proc_cnt + 1, ipcCtx, eventsLogger, ROOT);
+    ContextPtr root = contextCreate(0, proc_cnt + 1, ipcCtx, eventsLogger, ROOT, is_mutexl);
     ipcContextPrepare(ipcCtx, 0);
-    transitionToStartedState((ContextPtr)client);
-
-    while (contextStateType(client) != STATE_DONE);
+    transitionToStartedState(root);
 
     loggerDestroy(eventsLogger);
     ipcContextDestroy(ipcCtx);
-    contextDestroy((ContextPtr)client);
+    contextDestroy(root);
 
     for (int i = 0; i < proc_cnt; i++)
         wait(NULL);
