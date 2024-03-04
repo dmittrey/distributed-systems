@@ -17,36 +17,16 @@
 
 int validate(int argc, char **argv, int *proc_cnt, bool_t *is_mutexl)
 {
-    *is_mutexl = FALSE;
-    if (argc < 3)
-    {
-        printf("USAGE: ./prog -p X\n");
-        return 1;
-    }
-    if (strcmp(argv[1], "-p"))
-    {
-        printf("ERROR: -p not specified!\n");
-        return 1;
-    }
-    if ((*proc_cnt = atoi(argv[2])) == 0)
-    {
-        printf("ERROR: Number of proc not specified!\n");
-        return 1;
+    if (argc == 4) {
+        *proc_cnt = atoi(argv[3]);
+    } else {
+        *proc_cnt = atoi(argv[2]);
     }
 
-    if (argc == 4 && strcmp(argv[3], "--mutexl") == 0) 
+    if (strcmp(argv[1], "--mutexl") == 0) 
     {
         *is_mutexl = TRUE;
         printf("DEBUG: Mutex enabled!\n");
-    } else if (argc == 4) {
-        printf("ERROR: Wrong argument!\n");
-        return 1;
-    }
-
-    if (*proc_cnt < 1 || *proc_cnt > 10)
-    {
-        printf("ERROR: Specify proc count in range [1:10]!\n");
-        return 1;
     }
 
     return 0;

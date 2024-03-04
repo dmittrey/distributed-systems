@@ -14,9 +14,6 @@ void transitionToRequestCSState(ContextPtr instance) {
     instance->state->type = STATE_REQUEST_CS;
 
     if (instance->type == CHILD && instance->state->req_num++ < instance->id * 5) {
-        if (instance->is_mutexl == FALSE)
-            transitionToRunningCSState(instance);
-            
         if (request_cs(instance) == 0)
             transitionToPendingCSState(instance);
     } else {

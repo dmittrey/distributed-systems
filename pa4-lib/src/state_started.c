@@ -2,6 +2,9 @@
 
 #include "state_started.h"
 #include "state_request_cs.h"
+#include "state_half_done.h"
+
+#include "pa2345.h"
 
 #include "context.h"
 #include "message.h"
@@ -21,6 +24,16 @@ void transitionToStartedState(ContextPtr instance) {
 
     if (receive_all(instance, 1, STARTED) == 0) {
         loggerProcessReceivedAllStarted(instance->events_logger, instance->id);
+        if (instance->is_mutexl == FALSE) {
+            for (int i = 1; i < instance->id * 5 + 1; i++) {
+                char buf[100];
+                loopMessage(buf, instance->id, i, instance->id * 5);
+                print(buf);
+            }
+            transitionToHalfDoneState(instance);
+            return;
+        }
+        
         transitionToRequestCSState(instance);
     }
 }

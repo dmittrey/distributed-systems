@@ -66,7 +66,7 @@ add_custom_target(pa3
 )
 
 file(GLOB_RECURSE PA4_LIB_PACK_C_FILES pa4-lib/src/*.c)
-file(GLOB_RECURSE PA4_LIB_PACK_H_FILES pa4-lib/include/*.h)
+file(GLOB_RECURSE PA4_LIB_PACK_H_FILES pa4-lib/include/*.h pa2345-starter/*.h)
 
 add_custom_target(pa4
     BYPRODUCTS ${CMAKE_BINARY_DIR}/pa4 ${CMAKE_SOURCE_DIR}/pa4.tar.gz

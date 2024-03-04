@@ -16,8 +16,5 @@ void transitionToRunningCSState(ContextPtr instance) {
     loopMessage(buf, instance->id, instance->state->req_num, instance->id * 5);
     print(buf);
 
-    if (instance->is_mutexl == FALSE)
-        transitionToRequestCSState(instance);
-        
     transitionToReleaseCSState(instance);
 }
